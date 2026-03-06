@@ -1,4 +1,4 @@
-# Developer Portfolio - James Ryan GAID
+# Developer Portfolio - TRISTAN JAY GAID
 
 A modern, sleek portfolio website built with Astro 6, Tailwind CSS, and FastAPI backend. Features a dark theme with neon yellow accents and a beautiful sidebar navigation.
 
