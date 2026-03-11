@@ -1,3 +1,112 @@
+// ============================================
+// LOADING SCREEN & HERO CHARACTER SYSTEM
+// ============================================
+
+// Enhanced Loading Screen with Slower Animation
+function initLoadingScreen() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const loadingProgress = document.getElementById('loadingProgress');
+    const loadingPercent = document.getElementById('loadingPercent');
+    let progress = 0;
+    let isComplete = false;
+    
+    // Simulate slower, more realistic loading progress
+    const loadingInterval = setInterval(() => {
+        // Slower increment with variable speeds
+        if (progress < 30) {
+            progress += Math.random() * 8;
+        } else if (progress < 60) {
+            progress += Math.random() * 4;
+        } else if (progress < 85) {
+            progress += Math.random() * 2;
+        } else {
+            progress += Math.random() * 1;
+        }
+        
+        // Stop at 95% until page fully loads
+        if (progress > 95) progress = 95;
+        
+        loadingProgress.style.width = progress + '%';
+        loadingPercent.textContent = Math.floor(progress) + '%';
+    }, 400); // Slower interval = 400ms instead of 300ms
+    
+    // When page fully loads, complete to 100%
+    window.addEventListener('load', () => {
+        if (!isComplete) {
+            clearInterval(loadingInterval);
+            progress = 100;
+            loadingProgress.style.width = '100%';
+            loadingPercent.textContent = '100%';
+            isComplete = true;
+            
+            // Hold at 100% for a moment longer
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+            }, 800);
+        }
+    });
+    
+    // Fallback: hide loading screen after 8 seconds max
+    setTimeout(() => {
+        if (!isComplete) {
+            progress = 100;
+            loadingProgress.style.width = '100%';
+            loadingPercent.textContent = '100%';
+            clearInterval(loadingInterval);
+            isComplete = true;
+            loadingScreen.classList.add('hidden');
+        }
+    }, 8000);
+}
+
+// Initialize loading screen on page start
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoadingScreen);
+} else {
+    initLoadingScreen();
+}
+
+// ============================================
+// HERO CHARACTER EYE TRACKING SYSTEM
+// ============================================
+
+const heroCharacter = document.getElementById('heroCharacter');
+const leftPupil = document.querySelector('.left-pupil');
+const rightPupil = document.querySelector('.right-pupil');
+
+// Track mouse position for eye tracking
+document.addEventListener('mousemove', (e) => {
+    if (!heroCharacter) return;
+    
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    
+    // Calculate eye tracking
+    updateEyePosition(mouseX, mouseY);
+});
+
+// Eye tracking function - eyes follow cursor
+function updateEyePosition(mouseX, mouseY) {
+    const eyes = document.querySelectorAll('.pupil');
+    
+    eyes.forEach((pupil) => {
+        const eye = pupil.parentElement;
+        const eyeRect = eye.getBoundingClientRect();
+        const eyeCenterX = eyeRect.left + eyeRect.width / 2;
+        const eyeCenterY = eyeRect.top + eyeRect.height / 2;
+        
+        // Calculate angle from eye to cursor
+        const angle = Math.atan2(mouseY - eyeCenterY, mouseX - eyeCenterX);
+        
+        // Calculate pupil position (smaller distance for larger character)
+        const distance = 4;
+        const pupilX = Math.cos(angle) * distance;
+        const pupilY = Math.sin(angle) * distance;
+        
+        pupil.style.transform = `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))`;
+    });
+}
+
 // Mobile menu functionality
 const menuBtn = document.getElementById('menu-btn');
 const sidebar = document.querySelector('.sidebar');

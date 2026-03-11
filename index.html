@@ -7,6 +7,34 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-container">
+            <!-- Animated background elements -->
+            <div class="loading-glow loading-glow-1"></div>
+            <div class="loading-glow loading-glow-2"></div>
+            <div class="loading-particles">
+                <div class="load-particle" style="--delay: 0s"></div>
+                <div class="load-particle" style="--delay: 0.2s"></div>
+                <div class="load-particle" style="--delay: 0.4s"></div>
+                <div class="load-particle" style="--delay: 0.6s"></div>
+                <div class="load-particle" style="--delay: 0.8s"></div>
+            </div>
+            
+            <div class="loading-content">
+                <h2 class="loading-text">Loading AI Portfolio</h2>
+                <p class="loading-subtitle">Initializing System...</p>
+                <div class="loading-bar-wrapper">
+                    <div class="loading-bar">
+                        <div id="loadingProgress" class="loading-progress"></div>
+                        <div class="loading-bar-shimmer"></div>
+                    </div>
+                </div>
+                <p id="loadingPercent" class="loading-percent">0%</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
         <!-- Logo -->
@@ -48,21 +76,59 @@
                 <div class="particle particle-4"></div>
                 <div class="particle particle-5"></div>
             </div>
-            <div class="hero-content">
-                <div class="status-badge">✨ SYSTEM ONLINE: AVAILABLE</div>
-                <h1 class="hero-title hologram">
-                    TRISTAN<br>JAY<br><span class="accent-glow">GAID</span>
-                </h1>
-                <p class="subtitle typewriter">AI Specialist • Machine Learning • Computer Vision</p>
-                <div class="title-underline"></div>
-                <p class="hero-text">
-                    A dedicated AI Specialist who designs, develops, and deploys cutting-edge artificial intelligence and machine learning solutions to solve complex business challenges and optimize processes at scale.
-                </p>
-                <div class="hero-buttons">
-                    <button class="btn btn-accent">⬇️ Download CV</button>
-                    <a href="#contact" class="btn btn-outline">Get In Touch</a>
+            
+            <div class="hero-grid">
+                <!-- Hero Character -->
+                <div class="hero-character" id="heroCharacter">
+                    <div class="character-body">
+                        <!-- Head -->
+                        <div class="character-head">
+                            <!-- Left Ear -->
+                            <div class="ear left-ear"></div>
+                            <!-- Right Ear -->
+                            <div class="ear right-ear"></div>
+                            
+                            <div class="character-face">
+                                <!-- Eyes Container -->
+                                <div class="eyes-container">
+                                    <div class="eye left-eye">
+                                        <div class="pupil left-pupil"></div>
+                                    </div>
+                                    <div class="eye right-eye">
+                                        <div class="pupil right-pupil"></div>
+                                    </div>
+                                </div>
+                                <!-- Nose -->
+                                <div class="nose"></div>
+                                <!-- Mouth -->
+                                <div class="mouth"></div>
+                            </div>
+                            <!-- Head Glow -->
+                            <div class="head-glow"></div>
+                        </div>
+                        <!-- Body -->
+                        <div class="character-torso"></div>
+                    </div>
+                    <!-- Character Glow -->
+                    <div class="character-aura"></div>
                 </div>
                 
+                <!-- Hero Content -->
+                <div class="hero-content">
+                    <div class="status-badge">✨ SYSTEM ONLINE: AVAILABLE</div>
+                    <h1 class="hero-title hologram">
+                        TRISTAN<br>JAY<br><span class="accent-glow">GAID</span>
+                    </h1>
+                    <p class="subtitle typewriter">AI Specialist • Machine Learning • Computer Vision</p>
+                    <div class="title-underline"></div>
+                    <p class="hero-text">
+                        A dedicated AI Specialist who designs, develops, and deploys cutting-edge artificial intelligence and machine learning solutions to solve complex business challenges and optimize processes at scale.
+                    </p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-accent">⬇️ Download CV</button>
+                        <a href="#contact" class="btn btn-outline">Get In Touch</a>
+                    </div>
+                </div>
             </div>
         </section>
 
