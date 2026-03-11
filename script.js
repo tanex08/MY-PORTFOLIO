@@ -6,8 +6,34 @@ const mainContent = document.querySelector('.main-content');
 // Mobile menu button listener
 menuBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    // Toggle mobile menu - implementation for mobile view
-    console.log('Menu clicked');
+    sidebar?.classList.toggle('active');
+});
+
+// Close sidebar when clicking outside on mobile
+if (window.innerWidth <= 1024) {
+    document.addEventListener('click', (e) => {
+        if (sidebar?.classList.contains('active') && 
+            !sidebar.contains(e.target) && 
+            e.target !== menuBtn) {
+            sidebar.classList.remove('active');
+        }
+    });
+}
+
+// Close sidebar when clicking nav items
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+            sidebar?.classList.remove('active');
+        }
+    });
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1024) {
+        sidebar?.classList.remove('active');
+    }
 });
 
 // Smooth scrolling
@@ -29,8 +55,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 const contactForm = document.querySelector('.contact-form');
 if (contactForm) {
     contactForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const message = document.getElementById('message').value;
@@ -38,30 +62,16 @@ if (contactForm) {
         // Validate form
         if (!name || !email || !message) {
             alert('Please fill in all fields');
+            e.preventDefault();
             return;
         }
         
-        try {
-            // Send to backend (when you set up FastAPI)
-            const response = await fetch('http://localhost:8000/api/contact', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, message })
-            });
-            
-            if (response.ok) {
-                alert('Message sent successfully!');
-                contactForm.reset();
-            } else {
-                alert('Failed to send message');
-            }
-        } catch (error) {
-            console.log('Server not available - form data:', { name, email, message });
-            alert('Message saved locally. Please set up FastAPI backend to send.');
+        // Formspree will handle the submission automatically
+        // Show success message after form submits
+        setTimeout(() => {
+            alert('Message sent successfully! Thank you for reaching out.');
             contactForm.reset();
-        }
+        }, 500);
     });
 }
 
@@ -127,3 +137,383 @@ document.querySelector('.btn-contact-sidebar')?.addEventListener('click', () => 
         contactSection.scrollIntoView({ behavior: 'smooth' });
     }
 });
+
+// ============================================
+// AI DODGE GAME - Canvas Game Logic
+// ============================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startBtn = document.getElementById('startGameBtn');
+const pauseBtn = document.getElementById('pauseGameBtn');
+const scoreDisplay = document.getElementById('score');
+const highScoreDisplay = document.getElementById('highScore');
+const healthDisplay = document.getElementById('health');
+
+// Game variables
+let gameState = 'idle'; // idle, playing, paused, gameOver
+let score = 0;
+let highScore = localStorage.getItem('aiGameHighScore') || 0;
+let health = 3;
+let gameSpeed = 2;
+let spawnRate = 100;
+let frameCount = 0;
+let animationId = null;
+
+// Player object
+const player = {
+    x: canvas.width / 2 - 15,
+    y: canvas.height - 50,
+    width: 30,
+    height: 30,
+    speed: 5,
+    color: '#00ff88'
+};
+
+// Game arrays
+let obstacles = [];
+let bonuses = [];
+
+// Input handling
+const keys = {
+    ArrowLeft: false,
+    ArrowRight: false,
+    a: false,
+    A: false,
+    d: false,
+    D: false
+};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key in keys) {
+        keys[e.key] = true;
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.key in keys) {
+        keys[e.key] = false;
+    }
+});
+
+// Obstacle class
+class Obstacle {
+    constructor() {
+        this.width = 40;
+        this.height = 40;
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = -this.height;
+        this.speed = gameSpeed;
+        this.color = '#ff4444';
+    }
+    
+    update() {
+        this.y += this.speed;
+    }
+    
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = 'rgba(255, 68, 68, 0.6)';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.shadowBlur = 0;
+    }
+    
+    isOffScreen() {
+        return this.y > canvas.height;
+    }
+}
+
+// Bonus item class
+class Bonus {
+    constructor() {
+        this.width = 25;
+        this.height = 25;
+        this.x = Math.random() * (canvas.width - this.width);
+        this.y = -this.height;
+        this.speed = gameSpeed * 0.7;
+        this.color = '#00ff88';
+    }
+    
+    update() {
+        this.y += this.speed;
+    }
+    
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = 'rgba(0, 255, 136, 0.6)';
+        ctx.shadowBlur = 15;
+        
+        // Draw star/bonus shape
+        const x = this.x + this.width / 2;
+        const y = this.y + this.height / 2;
+        const radius = 12;
+        
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+            const r = i % 2 === 0 ? radius : radius / 2;
+            const px = x + r * Math.cos(angle);
+            const py = y + r * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+    
+    isOffScreen() {
+        return this.y > canvas.height;
+    }
+}
+
+// Update high score display
+function updateHighScore() {
+    highScoreDisplay.textContent = highScore;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('aiGameHighScore', highScore);
+        highScoreDisplay.textContent = highScore;
+    }
+}
+
+// Update health display
+function updateHealth() {
+    const hearts = '❤️'.repeat(Math.max(0, health));
+    healthDisplay.textContent = hearts || '💀';
+}
+
+// Update score display
+function updateScore() {
+    scoreDisplay.textContent = score;
+}
+
+// Handle player movement
+function updatePlayer() {
+    if (keys.ArrowLeft || keys.a || keys.A) {
+        player.x = Math.max(0, player.x - player.speed);
+    }
+    if (keys.ArrowRight || keys.d || keys.D) {
+        player.x = Math.min(canvas.width - player.width, player.x + player.speed);
+    }
+}
+
+// Spawn obstacles
+function spawnObstacles() {
+    if (frameCount % spawnRate === 0) {
+        obstacles.push(new Obstacle());
+    }
+    if (frameCount % (spawnRate - 20) === 0 && spawnRate > 40) {
+        if (Math.random() < 0.3) {
+            bonuses.push(new Bonus());
+        }
+    }
+}
+
+// Check collisions
+function checkCollisions() {
+    // Check obstacle collisions
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        if (rectanglesColliding(player, obs)) {
+            obstacles.splice(i, 1);
+            health--;
+            updateHealth();
+            
+            if (health <= 0) {
+                endGame();
+            }
+            continue;
+        }
+        
+        if (obs.isOffScreen()) {
+            obstacles.splice(i, 1);
+            score += 1;
+            updateScore();
+        }
+    }
+    
+    // Check bonus collisions
+    for (let i = bonuses.length - 1; i >= 0; i--) {
+        const bonus = bonuses[i];
+        if (rectanglesColliding(player, bonus)) {
+            bonuses.splice(i, 1);
+            score += 10;
+            updateScore();
+            updateHighScore();
+            continue;
+        }
+        
+        if (bonus.isOffScreen()) {
+            bonuses.splice(i, 1);
+        }
+    }
+}
+
+// Rectangle collision detection
+function rectanglesColliding(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+// Draw background
+function drawBackground() {
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Grid pattern
+    ctx.strokeStyle = 'rgba(0, 255, 136, 0.05)';
+    ctx.lineWidth = 1;
+    const gridSize = 20;
+    
+    for (let i = 0; i <= canvas.width; i += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+    }
+    for (let i = 0; i <= canvas.height; i += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+    }
+}
+
+// Draw player
+function drawPlayer() {
+    ctx.fillStyle = player.color;
+    ctx.shadowColor = 'rgba(0, 255, 136, 0.8)';
+    ctx.shadowBlur = 20;
+    
+    // Draw player as glowing square
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Draw player border
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(player.x, player.y, player.width, player.height);
+    
+    ctx.shadowBlur = 0;
+}
+
+// Increase difficulty
+function increaseDifficulty() {
+    if (score % 50 === 0 && score > 0) {
+        gameSpeed = Math.min(gameSpeed + 0.5, 6);
+        spawnRate = Math.max(spawnRate - 5, 30);
+    }
+}
+
+// Draw game over overlay
+function drawGameOver() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#ff4444';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(255, 68, 68, 0.8)';
+    ctx.shadowBlur = 20;
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40);
+    
+    ctx.fillStyle = '#00ff88';
+    ctx.font = '24px Arial';
+    ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 60);
+    
+    ctx.shadowBlur = 0;
+}
+
+// Main game loop
+function gameLoop() {
+    if (gameState === 'playing') {
+        drawBackground();
+        
+        updatePlayer();
+        checkCollisions();
+        increaseDifficulty();
+        spawnObstacles();
+        
+        // Update and draw obstacles
+        for (let obs of obstacles) {
+            obs.update();
+            obs.draw();
+        }
+        
+        // Update and draw bonuses
+        for (let bonus of bonuses) {
+            bonus.update();
+            bonus.draw();
+        }
+        
+        drawPlayer();
+        frameCount++;
+    } else if (gameState === 'paused') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#8a2be2';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+    } else if (gameState === 'gameOver') {
+        drawGameOver();
+        return;
+    }
+    
+    animationId = requestAnimationFrame(gameLoop);
+}
+
+// Start game
+function startGame() {
+    gameState = 'playing';
+    score = 0;
+    health = 3;
+    gameSpeed = 2;
+    spawnRate = 100;
+    frameCount = 0;
+    obstacles = [];
+    bonuses = [];
+    player.x = canvas.width / 2 - 15;
+    
+    updateScore();
+    updateHealth();
+    updateHighScore();
+    
+    startBtn.style.display = 'none';
+    pauseBtn.style.display = 'inline-block';
+    pauseBtn.textContent = '⏸️ PAUSE';
+    
+    gameLoop();
+}
+
+// Pause game
+function pauseGame() {
+    if (gameState === 'paused') {
+        gameState = 'playing';
+        pauseBtn.textContent = '⏸️ PAUSE';
+    } else if (gameState === 'playing') {
+        gameState = 'paused';
+        pauseBtn.textContent = '▶️ RESUME';
+    }
+    gameLoop();
+}
+
+// End game
+function endGame() {
+    gameState = 'gameOver';
+    pauseBtn.style.display = 'none';
+    startBtn.style.display = 'inline-block';
+    startBtn.textContent = '▶️ RESTART GAME';
+}
+
+// Event listeners for game buttons
+startBtn.addEventListener('click', startGame);
+pauseBtn.addEventListener('click', pauseGame);
+
+// Initialize high score display
+updateHighScore();
